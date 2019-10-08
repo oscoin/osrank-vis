@@ -129,6 +129,17 @@ function run() {
     });
 
     var graphics = webglSupported ? Viva.Graph.View.webglGraphics() : Viva.Graph.View.svgGraphics();
+    graphics
+        .node(function(node){
+            var r = node.data.viz.color.r;
+            var g = node.data.viz.color.g;
+            var b = node.data.viz.color.b;
+            var col_hex = ((1 << 24) + (0 << 16) + (0 << 8) + 255).toString(16).slice(1)
+            return Viva.Graph.View.webglSquare(node.data.viz.size, "#" + col_hex);
+        })
+        .link(function(link) {
+            return Viva.Graph.View.webglLine("#000000");
+        });
 
     var renderer = Viva.Graph.View.renderer(graph,
         {
