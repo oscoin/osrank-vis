@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Graph Viewer Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Visualization of sparse matrices collection with vivagraph.js">
+    <meta name="author" content="Andrei Kashcha">
+
+    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="bootstrap/css/bootstrap-responsive.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+
+  </head>
+  <body>
+    <div class="container no-overflow take-it-all">
+      <div class="row max-height">
+        <div class="whole-height" id="graphVisualization">
+        </div>
+        <div class="span2 well scrollable whole-height" id="sideNavigation">
+          <h3>Choose Graph:</h3>
+          <div class="sidebar-nav">
+            <ul class="nav nav-list" id='graphsContainer'></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id='progress' style="width: 200px; text-align:center;position: absolute;left: 50%;margin-left: -75px; display: none;">
+      <div class="progress progress-striped active"><div class="bar" style="width: 100%;"></div></div>
+      Loading...
+    </div>
+
+    <div id='settings'>
+      <h3>Layout Settings</h3>
+      <label><i class="icon-question-sign" title="Hook's law coefficient. The smaller number loosens edges length"></i> Spring Coeff: </label>
+      <input type="text" class='settings-box' id='springCoeff'>
+
+      <label><i class="icon-question-sign" title="Ideal length of edges in pixels"></i> Spring Length: </label>
+      <input type="text" class='settings-box' id='springLength'>
+
+      <label><i class="icon-question-sign" title="Coulomb's law coefficient. The smaller number makes repeling force stronger. Making it positive makes node attract each other :)"></i> Gravity Coeff: </label>
+      <input type="text" class='settings-box' id='gravity'>
+
+      <label><i class="icon-question-sign" title="System cooldown coeffecient. The larger it is the faster system will stop"></i> Drag Coeff: </label>
+      <input type="text" class='settings-box' id='dragCoeff'>
+
+      <label><i class="icon-question-sign" title="Barnes-Hut simulation coefficient. Values larger than 1 will make system converge faster but not necessary to the best layout"></i> Theta Coeff: </label>
+      <input type="text" class='settings-box' id='theta'>
+
+      <button type="submit" class="btn">Reset to default</button>
+
+      <div id='description'>
+      </div>
+
+    </div>
+
+    <div id='toggleLayout'>
+      <i class="icon-pause"></i>Pause layout
+    </div>
+
+    <div id='webglsupport'>
+      <div class="alert alert-error">Your browser seem not to support WebGL. <br/>
+        I'm falling back to SVG rendering but it's slow.<br/>
+        Click <a href='http://get.webgl.org/troubleshooting'>here</a> to troubleshoot
+        WebGL and get better performance.<br />
+        Check <a href='http://www.youtube.com/watch?v=L5KrtGB8oA4'>this video</a> to see this site in action.
+      </div>
+    </div>
+    <div id='mouseScrollHint'>
+      <span class="label label-inverse">Use mouse wheel to zoom in/zoom out</span>
+    </div>
+    <script src="js/vivagraph.min.js?v=0.19"></script>
+    <script src="js/graphsdb.js?v=0.29"></script>
+    <script src="js/graphs.js?v=0.1"></script>
+    <script src="js/jquery.min.js?v=0.1"></script>
+    <script src="js/ngraph.gexf.min.js?v=0.1"></script>
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+    <script src="js/logic.js?v=0.1"></script>
+  </body>
+</html>
