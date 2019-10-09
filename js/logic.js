@@ -174,7 +174,7 @@ function run() {
                 descriptionContainer.append('<h3>' + graph.name + '</h3>');
                 descriptionContainer.append('<div><b>Nodes: </b>' + graph.getNodesCount() + '</div>');
                 descriptionContainer.append('<div><b>Edges: </b>' + graph.getLinksCount() + '</div>');
-                descriptionContainer.append('<div><b>Image: </b><br/><img src="' + thumbnail + imgName + '" /></div>');
+                //descriptionContainer.append('<div><b>Image: </b><br/><img src="' + thumbnail + imgName + '" /></div>');
                 //$('img', descriptionContainer).popover({content : '<img src="' + full + imgName + '" />', placement : 'left'});
 
                 descriptionContainer.show();
@@ -198,14 +198,17 @@ function run() {
 
             var cachedGraph = cache.get(search);
             if (cachedGraph) {
-                console.log("Cached graph found.");
-                console.log(cachedGraph);
+                console.debug("Cached graph found.");
+                console.debug(cachedGraph);
                 graphUpdated(search, cachedGraph);
             } else {
-                console.log("Grabbing a new graph");
-                var newGraph = NgraphGexf.load(Graphs[search]);
+                console.debug("Grabbing a new graph");
+                var gunzip = new Zlib.Gunzip(Graphs[search]);
+                var newGraph = NgraphGexf.load(new TextDecoder("utf-8").decode(gunzip.decompress()));
+                console.debug("Finished building and decompressing..");
                 graphUpdated(search, newGraph);
-                cache.put(search, newGraph);
+                // Cache not working for now.
+                // cache.put(search, newGraph);
             }
             return false;
         },
@@ -230,7 +233,6 @@ function run() {
 
         visualizeCurrentHash = function() {
             var graphName = getCurrentGraphName();
-            console.log(graphName);
 
             graph.name = graphName;
             if (graphName) {
