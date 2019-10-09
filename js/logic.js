@@ -113,12 +113,13 @@ function run() {
 
     buildNavigationUI();
 
-    var graph = NgraphGexf.load(Graphs.Cargo),
+    var graph = Viva.Graph.graph(); 
         descriptionContainer = $('#description'),
         isPaused = false,
         cache = simpleCache();
 
     window.TheGraph = graph;
+    window.TheCache = cache;
 
     var layout = Viva.Graph.Layout.forceDirected(graph, {
         springLength : 30,
@@ -151,68 +152,67 @@ function run() {
 
     renderer.run();
 
-    var renderGraph = function(edges, recordsPerEdge) {
+    var renderGraph = function(graphName, newGraph) {
         graph.beginUpdate();
-        for(var i = 0; i < edges.length - 1; i += recordsPerEdge) {
-            graph.addLink(edges[i], edges[i + 1]);
-        }
-
+        newGraph.forEachNode(function(n) {
+            graph.addNode(n.id, n.data);
+        });
+        newGraph.forEachLink(function(link) {
+            graph.addLink(link.fromId,link.toId,link.data);
+        });
+        graph.name = graphName;
         graph.endUpdate();
     },
 
         setDescription = function(description) {
             if (graph.name) {
-                var thumbnail = 'http://yifanhu.net//GALLERY/GRAPHS/GIF_THUMBNAIL/',
-                    full = 'http://yifanhu.net/GALLERY/GRAPHS/GIF_SMALL/',
-                    parts = graph.name.split('/'),
-                    imgName = parts[0] + '@' + parts[1] + '.gif';
+                //var thumbnail = 'http://yifanhu.net//GALLERY/GRAPHS/GIF_THUMBNAIL/',
+                //    full = 'http://yifanhu.net/GALLERY/GRAPHS/GIF_SMALL/',
+                //    parts = graph.name.split('/'),
+                //    imgName = parts[0] + '@' + parts[1] + '.gif';
+                descriptionContainer.empty();
                 descriptionContainer.append('<h3>' + graph.name + '</h3>');
                 descriptionContainer.append('<div><b>Nodes: </b>' + graph.getNodesCount() + '</div>');
                 descriptionContainer.append('<div><b>Edges: </b>' + graph.getLinksCount() + '</div>');
                 descriptionContainer.append('<div><b>Image: </b><br/><img src="' + thumbnail + imgName + '" /></div>');
-                $('img', descriptionContainer).popover({content : '<img src="' + full + imgName + '" />', placement : 'left'});
+                //$('img', descriptionContainer).popover({content : '<img src="' + full + imgName + '" />', placement : 'left'});
 
                 descriptionContainer.show();
             }
         },
 
-        graphUpdated = function(mtxObject) {
+        graphUpdated = function(graphName, graph) {
             $('#progress').hide();
-            // unpack graph mtxObject to normal array.
-            //renderGraph(mtxObject.links, mtxObject.recordsPerEdge);
-            setDescription("Cargo");
+            renderGraph(graphName, graph);
+            setDescription(graphName);
             $('#toggleLayout').html('<i class="icon-pause"></i>Pause layout');
         },
 
         loadGraph = function(search) {
+            console.log("Starting to load the graph..");
             $('#progress').show();
             descriptionContainer.empty().hide();
 
-            //graph.clear();
+            graph.clear();
+            graphUpdated(search, graph);
 
-            graphUpdated(graph);
-
-            //var cachedGraph = cache.get(search);
-            //if (cachedGraph) {
-            //    graphUpdated(cachedGraph);
-            //} else {
-            //    var url = 'http://s3.amazonaws.com/yasiv_uf/out/' + search + '/index.js';
-
-            //    $.ajax({
-            //        url: url,
-            //        dataType: 'json',
-            //        success: function(data) {
-            //            cache.put(search, data);
-            //            graphUpdated(data);
-            //        }
-            //    });
-            //}
+            var cachedGraph = cache.get(search);
+            if (cachedGraph) {
+                console.log("Cached graph found.");
+                console.log(cachedGraph);
+                graphUpdated(search, cachedGraph);
+            } else {
+                console.log("Grabbing a new graph");
+                var newGraph = NgraphGexf.load(Graphs[search]);
+                graphUpdated(search, newGraph);
+                cache.put(search, newGraph);
+            }
             return false;
         },
 
         getCurrentGraphName = function() {
             var query = window.location.hash,
-                graphMatch = query.match(/\#(.+\/.+)/i);
+                graphMatch = query.match(/\#(.+)/i);
             return graphMatch ? graphMatch[1] : null;
         },
 
@@ -230,6 +230,7 @@ function run() {
 
         visualizeCurrentHash = function() {
             var graphName = getCurrentGraphName();
+            console.log(graphName);
 
             graph.name = graphName;
             if (graphName) {
