@@ -124,7 +124,7 @@ function run() {
         springLength : 30,
         springCoeff : 0.0008,
         dragCoeff : 0.009,
-        gravity : -1.2,
+        gravity : -0.1,
         theta : 0.8
     });
 
@@ -134,7 +134,7 @@ function run() {
             var r = node.data.viz.color.r;
             var g = node.data.viz.color.g;
             var b = node.data.viz.color.b;
-            var col_hex = ((1 << 24) + (0 << 16) + (0 << 8) + 255).toString(16).slice(1)
+            var col_hex = ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)
             return Viva.Graph.View.webglSquare(node.data.viz.size, "#" + col_hex);
         })
         .link(function(link) {
