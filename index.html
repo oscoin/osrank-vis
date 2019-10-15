@@ -16,12 +16,23 @@
       <div class="row max-height">
         <div class="whole-height" id="graphVisualization">
         </div>
+        
         <div class="span2 well scrollable whole-height" id="sideNavigation">
           <h3>Choose Graph:</h3>
           <div class="sidebar-nav">
             <ul class="nav nav-list" id='graphsContainer'></ul>
           </div>
+
+          <h3>Node explorer</h3>
+          <form class="navbar-search input-medium">
+            <input type="text" id="node-explorer" class="search-query input-medium" placeholder="Search">
+          </form>
+
+          <ul style="list-style-type:none" id="node-explorer-result"></ul>
+
+        <!-- end of sideNavigation -->
         </div>
+
       </div>
     </div>
 

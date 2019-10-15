@@ -1,3 +1,21 @@
+
+(function($) {
+$.fn.donetyping = function(callback){
+    var _this = $(this);
+    var x_timer;    
+    _this.keyup(function (){
+        clearTimeout(x_timer);
+        x_timer = setTimeout(clear_timer, 500);
+    }); 
+
+    function clear_timer(){
+        clearTimeout(x_timer);
+        callback.call(_this);
+    }
+}
+})(jQuery);
+
+
 function settingsMonitor(layout, inputsCollection, renderer) {
     var fields = {},
         fieldIds = [],
@@ -71,6 +89,20 @@ function simpleCache() {
 }
 
 function run() {
+
+    $("#node-explorer").donetyping(function(callback){
+        var result;
+        var ul = $("#node-explorer-result");
+        if (TheGraph !== undefined) {
+          var nodeId = $("#node-explorer").val();
+          result = TheGraph.getNode(nodeId);
+          ul.empty();
+            if (result !== undefined) {
+                ul.append('<li><a href="#">Name:</a> ' + nodeId + '</li>');
+                ul.append('<li><a href="#">Rank:</a> ' + result.data.osrank + '</li>');
+            }
+        }
+    });
 
     var buildNavigationUI = function() {
         var container = $('#graphsContainer'),
