@@ -15,53 +15,8 @@ $.fn.donetyping = function(callback){
 }
 })(jQuery);
 
-
-function settingsMonitor(layout, inputsCollection, renderer) {
-    var fields = {},
-        fieldIds = [],
-        i,
-        defaults = {},
-
-        valueChanged = function() {
-            var newValue = parseFloat(this.value);
-            var simulator = layout.simulator;
-            if (!isNaN(newValue)) {
-                simulator[this.id](newValue);
-                renderer.resume();
-            }
-        };
-
-    var simulator = layout.simulator;
-    for(i = 0; i < inputsCollection.length; ++i) {
-        if (simulator.hasOwnProperty(inputsCollection[i].id)) {
-            var id = inputsCollection[i].id;
-            fieldIds.push(id);
-            fields[id] = $(inputsCollection[i]);
-        } else {
-            console.log('Unknown layout parameter: ' + inputsCollection[i].id);
-        }
-    }
-
-    for(i = 0; i < fieldIds.length; ++i) {
-        var name =fieldIds[i],
-            defaultValue = simulator[name]();
-        defaults[name] = defaultValue;
-        fields[name].val(defaultValue).change(valueChanged);
-    }
-
-    return {
-        updateToDefault : function() {
-            var simulator = layout.simulator;
-            for(var k in defaults) {
-                if (defaults.hasOwnProperty(k)) {
-                    fields[k].val(defaults[k]);
-                    simulator[k](defaults[k]);
-                }
-            }
-            renderer.resume();
-        }
-    };
-}
+var InDegree  = {};
+var OutDegree = {};
 
 function simpleCache() {
     var supported = window.hasOwnProperty('localStorage');
@@ -91,46 +46,111 @@ function simpleCache() {
 function runNodeExplorer(graph, graphics, renderer) {
     var lastNodeColor;
     var lastNodeId;
+    var lastNodeSize;
+    var lastIncomingLinks = [];
+    var lastDependecies = [];
 
     var updateResults = function () {
         var result;
         var ul = $("#node-explorer-result");
-        var nodeId; 
+        var nodeId = $("#node-explorer").val();
 
         if (graph !== undefined) {
-          nodeId = $("#node-explorer").val();
           result = graph.getNode(nodeId);
           ul.empty();
             if (result !== undefined) {
                 ul.append('<li><a href="#">Name:</a> ' + nodeId + '</li>');
                 ul.append('<li><a href="#">Rank:</a> ' + result.data.osrank + '</li>');
+                ul.append('<li><a href="#">In-Degree:</a> '  + InDegree[nodeId]  + '</li>');
+                ul.append('<li><a href="#">Out-Degree:</a> ' + OutDegree[nodeId] + '</li>');
             }
         }
 
         return nodeId;
     };
 
-    var highlightNode = function (nodeId) {
-        if (nodeId !== undefined && nodeId != "") {
+    var unHighlightLast = function (nodeId) {
+        // Restore the properties of the previously-selected node, if any.
+        if (lastNodeId !== undefined) {
+            graphics.getNodeUI(lastNodeId).color = lastNodeColor;
+            graphics.getNodeUI(lastNodeId).size  = lastNodeSize;
 
-            // Restore the colour of the previously-selected node, if any.
-            if (lastNodeColor !== undefined && lastNodeId !== undefined) {
-                graphics.getNodeUI(lastNodeId).color = lastNodeColor;
-            }
+            lastIncomingLinks.forEach(function (l, index) {
+                // Restore the links colour.
+                graphics.getLinkUI(l.id).color = 0xF0F0F0ff;
+            });
+
+            lastDependecies.forEach(function (dep, index) {
+                let ui = graphics.getNodeUI(dep.id);
+                ui.color = dep.color;
+                ui.size  = dep.size;
+            });
+
+            renderer.rerender();
+        }
+    };
+
+    var highlightNode = function (nodeId) {
+
+        // un-highlight any previous node, if any.
+        if (nodeId == "") {
+            unHighlightLast();
+            return;
+        }
+
+        if (nodeId !== undefined) {
+
+            unHighlightLast();
 
             var ui = graphics.getNodeUI(nodeId);
             if (ui !== undefined) {
                 lastNodeId = nodeId;
                 lastNodeColor = graphics.getNodeUI(nodeId).color;
+                lastNodeSize = graphics.getNodeUI(nodeId).size;
                 graphics.getNodeUI(nodeId).color = 0xFFA500ff;
+                graphics.getNodeUI(nodeId).size  = 70;
                 renderer.rerender();
             }
+        }
+    };
+    
+    var highlightOutgoingLinks = function (nodeId) {
+
+        lastDependecies = [];
+
+        if (nodeId !== undefined && nodeId !== "") {
+
+            var node = graph.getNode(nodeId);
+            if (node !== undefined) {
+                var allLinks = node.links;
+                lastIncomingLinks = allLinks;
+
+                allLinks.forEach(function (l, index) {
+                    // Highlight packages which depends on this node.
+                    if (l.toId == nodeId) {
+
+                        let fromIdNodeUI = graphics.getNodeUI(l.fromId);
+                        lastDependecies.push({ id: l.fromId, color: fromIdNodeUI.color, size: fromIdNodeUI.size });
+
+                        graphics.getLinkUI(l.id).color = 0xFFA500ff;
+
+                        // avoid self-loops
+                        if (l.fromId != nodeId) {
+                            fromIdNodeUI.size = 50;
+                            fromIdNodeUI.color = 0x008000ff;
+                        }
+                    }
+                });
+            }
+
+            renderer.rerender();
         }
     };
 
     var updateNodeExplorerResults = function () {
         var selectedNode = updateResults();
         highlightNode(selectedNode);
+        highlightOutgoingLinks(selectedNode);
     };
 
     $("#node-explorer").donetyping(function(callback){
@@ -181,20 +201,16 @@ function run() {
 
     buildNavigationUI();
 
-    var graph = Viva.Graph.graph(); 
+    var graph = Viva.Graph.graph(),
         descriptionContainer = $('#description'),
-        isPaused = true,
         cache = simpleCache();
 
     window.TheGraph = graph;
     window.TheCache = cache;
 
-    var layout = StaticLayout(graph, {
-        springLength : 30,
-        springCoeff : 0.0008,
-        dragCoeff : 0.009,
-        gravity : -0.1,
-        theta : 0.8
+    var layout = Viva.Graph.Layout.constant(graph);
+    layout.placeNode(function(node) {
+        return node.data.viz.position;
     });
 
     var graphics = webglSupported ? Viva.Graph.View.webglGraphics() : Viva.Graph.View.svgGraphics();
@@ -223,7 +239,6 @@ function run() {
 
     window.TheRendered = renderer;
     renderer.run();
-    setTimeout(function () { renderer.pause(); }, 1000);
 
     var renderGraph = function(graphName, newGraph) {
         graph.beginUpdate();
@@ -234,22 +249,19 @@ function run() {
             graph.addLink(link.fromId,link.toId,link.data);
         });
         graph.name = graphName;
+
+        InDegree  = Degree.degree(graph, 'in');
+        OutDegree = Degree.degree(graph, 'out');
+
         graph.endUpdate();
     },
 
         setDescription = function(description) {
             if (graph.name) {
-                //var thumbnail = 'http://yifanhu.net//GALLERY/GRAPHS/GIF_THUMBNAIL/',
-                //    full = 'http://yifanhu.net/GALLERY/GRAPHS/GIF_SMALL/',
-                //    parts = graph.name.split('/'),
-                //    imgName = parts[0] + '@' + parts[1] + '.gif';
                 descriptionContainer.empty();
                 descriptionContainer.append('<h3>' + graph.name + '</h3>');
                 descriptionContainer.append('<div><b>Nodes: </b>' + graph.getNodesCount() + '</div>');
                 descriptionContainer.append('<div><b>Edges: </b>' + graph.getLinksCount() + '</div>');
-                //descriptionContainer.append('<div><b>Image: </b><br/><img src="' + thumbnail + imgName + '" /></div>');
-                //$('img', descriptionContainer).popover({content : '<img src="' + full + imgName + '" />', placement : 'left'});
-
                 descriptionContainer.show();
             }
         },
@@ -258,7 +270,6 @@ function run() {
             $('#progress').hide();
             renderGraph(graphName, graph);
             setDescription(graphName);
-            $('#toggleLayout').html('<i class="icon-pause"></i>Pause layout');
         },
 
         loadGraph = function(search) {
@@ -292,18 +303,6 @@ function run() {
             return graphMatch ? graphMatch[1] : null;
         },
 
-        toggleLayout = function() {
-            isPaused = !isPaused;
-            if (isPaused) {
-                $('#toggleLayout').html('<i class="icon-play"></i>Resume layout');
-                renderer.pause();
-            } else {
-                $('#toggleLayout').html('<i class="icon-pause"></i>Pause layout');
-                renderer.resume();
-            }
-            return false;
-        },
-
         visualizeCurrentHash = function() {
             var graphName = getCurrentGraphName();
 
@@ -317,19 +316,9 @@ function run() {
         };
 
     $(window).hashchange(visualizeCurrentHash);
-    $(window).keydown(function(e) {
-        if (e.keyCode === 32) { // toggle on spacebar;
-            toggleLayout();
-        }
-    });
 
-    $('#toggleLayout').click(function() {
-        toggleLayout();
-    });
     var settings = $('#settings');
     $('i', settings).tooltip({placement : 'left'});
-    var monitor = settingsMonitor(layout, $('input', settings), renderer);
-    $('.btn', settings).click(function(){ monitor.updateToDefault(); });
     visualizeCurrentHash();
 
     r = renderer;

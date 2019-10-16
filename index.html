@@ -42,31 +42,13 @@
     </div>
 
     <div id='settings'>
-      <h3>Layout Settings</h3>
-      <label><i class="icon-question-sign" title="Hook's law coefficient. The smaller number loosens edges length"></i> Spring Coeff: </label>
-      <input type="text" class='settings-box' id='springCoeff'>
-
-      <label><i class="icon-question-sign" title="Ideal length of edges in pixels"></i> Spring Length: </label>
-      <input type="text" class='settings-box' id='springLength'>
-
-      <label><i class="icon-question-sign" title="Coulomb's law coefficient. The smaller number makes repeling force stronger. Making it positive makes node attract each other :)"></i> Gravity Coeff: </label>
-      <input type="text" class='settings-box' id='gravity'>
-
-      <label><i class="icon-question-sign" title="System cooldown coeffecient. The larger it is the faster system will stop"></i> Drag Coeff: </label>
-      <input type="text" class='settings-box' id='dragCoeff'>
-
-      <label><i class="icon-question-sign" title="Barnes-Hut simulation coefficient. Values larger than 1 will make system converge faster but not necessary to the best layout"></i> Theta Coeff: </label>
-      <input type="text" class='settings-box' id='theta'>
-
-      <button type="submit" class="btn">Reset to default</button>
-
+      <h3>Graph info</h3>
       <div id='description'>
       </div>
 
     </div>
 
     <div id='toggleLayout'>
-      <i class="icon-play"></i>Start layout
     </div>
 
     <div id='webglsupport'>
@@ -89,6 +71,7 @@
     <script src="js/ngraph.gexf.min.js?v=0.1"></script>
     <script src="bootstrap/js/bootstrap.min.js"></script>
     <script src="js/layout.js?v=0.1"></script>
+    <script src="js/degree.js?v=0.1"></script>
     <script src="js/logic.js?v=0.1"></script>
   </body>
 </html>
