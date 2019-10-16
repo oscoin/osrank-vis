@@ -88,21 +88,57 @@ function simpleCache() {
     };
 }
 
-function run() {
+function runNodeExplorer(graph, graphics, renderer) {
+    var lastNodeColor;
+    var lastNodeId;
 
-    $("#node-explorer").donetyping(function(callback){
+    var updateResults = function () {
         var result;
         var ul = $("#node-explorer-result");
-        if (TheGraph !== undefined) {
-          var nodeId = $("#node-explorer").val();
-          result = TheGraph.getNode(nodeId);
+        var nodeId; 
+
+        if (graph !== undefined) {
+          nodeId = $("#node-explorer").val();
+          result = graph.getNode(nodeId);
           ul.empty();
             if (result !== undefined) {
                 ul.append('<li><a href="#">Name:</a> ' + nodeId + '</li>');
                 ul.append('<li><a href="#">Rank:</a> ' + result.data.osrank + '</li>');
             }
         }
+
+        return nodeId;
+    };
+
+    var highlightNode = function (nodeId) {
+        if (nodeId !== undefined && nodeId != "") {
+
+            // Restore the colour of the previously-selected node, if any.
+            if (lastNodeColor !== undefined && lastNodeId !== undefined) {
+                graphics.getNodeUI(lastNodeId).color = lastNodeColor;
+            }
+
+            var ui = graphics.getNodeUI(nodeId);
+            if (ui !== undefined) {
+                lastNodeId = nodeId;
+                lastNodeColor = graphics.getNodeUI(nodeId).color;
+                graphics.getNodeUI(nodeId).color = 0xFFA500ff;
+                renderer.rerender();
+            }
+        }
+    };
+
+    var updateNodeExplorerResults = function () {
+        var selectedNode = updateResults();
+        highlightNode(selectedNode);
+    };
+
+    $("#node-explorer").donetyping(function(callback){
+        updateNodeExplorerResults();
     });
+}
+
+function run() {
 
     var buildNavigationUI = function() {
         var container = $('#graphsContainer'),
@@ -147,13 +183,13 @@ function run() {
 
     var graph = Viva.Graph.graph(); 
         descriptionContainer = $('#description'),
-        isPaused = false,
+        isPaused = true,
         cache = simpleCache();
 
     window.TheGraph = graph;
     window.TheCache = cache;
 
-    var layout = Viva.Graph.Layout.forceDirected(graph, {
+    var layout = StaticLayout(graph, {
         springLength : 30,
         springCoeff : 0.0008,
         dragCoeff : 0.009,
@@ -162,6 +198,7 @@ function run() {
     });
 
     var graphics = webglSupported ? Viva.Graph.View.webglGraphics() : Viva.Graph.View.svgGraphics();
+    window.TheGraphics = graphics;
     graphics
         .node(function(node){
             var r = node.data.viz.color.r;
@@ -171,7 +208,7 @@ function run() {
             return Viva.Graph.View.webglSquare(node.data.viz.size, "#" + col_hex);
         })
         .link(function(link) {
-            return Viva.Graph.View.webglLine("#000000");
+            return Viva.Graph.View.webglLine("#F0F0F0");
         });
 
     var renderer = Viva.Graph.View.renderer(graph,
@@ -182,7 +219,11 @@ function run() {
             container : document.getElementById('graphVisualization')
         });
 
+    runNodeExplorer(graph, graphics, renderer);
+
+    window.TheRendered = renderer;
     renderer.run();
+    setTimeout(function () { renderer.pause(); }, 1000);
 
     var renderGraph = function(graphName, newGraph) {
         graph.beginUpdate();
